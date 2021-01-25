@@ -1,4 +1,4 @@
-function [Sx,Sx_fi,alphao,fo]=autofam_fixed(x,fs,df,dalpha)
+function [Sx,Sx_fi,Sx_int,alphao,fo]=autofam_fixed(x,fs,df,dalpha)
 %   AUTOFAM(X,FS,DF,DALPHA) computes the spectral auto-
 %   correlation density function estimate of the signals X
 %   by using the FFT Accumulation Method(FAM). Make sure that
@@ -111,6 +111,8 @@ XD=transpose(XD);  % Prior to this, each column was a set of time, column 1 was 
 
 % figure;surf(log(abs(XD))); title('Down conversion Trans');
 XD_fi=fi(XD,1,16,10); % 6.10
+XD_int=int32(XD*(2^10)); % 32-bit integer
+XD_single=single(XD_int);
 % figure;surf(real(XD_fi)); title('Down conversion real');
 % figure;surf(imag(XD_fi)); title('Down conversion image');
 %%%%%%%%%%%%%%%%%%%%
@@ -121,17 +123,22 @@ XD_fi=fi(XD,1,16,10); % 6.10
 % It's similar to the auto correlation of the FFT.
 XM=zeros(P,Np^2);
 XM_fi=fi(zeros(P,Np^2),1,16,4); % 12.4
+XM_int=int32(zeros(P,Np^2));
 for k=1:Np
     for l=1:Np
         XM(:,(k-1)*Np+l)=(XD(:,k).*conj(XD(:,l)));
         XM_fi(:,(k-1)*Np+l)=(XD_fi(:,k).*conj(XD_fi(:,l)));
+        XM_int(:,(k-1)*Np+l)=(XD_single(:,k).*conj(XD_single(:,l)));
 %         XM_fi(:,(k-1)*Np+l) ...
 %         = (fi(real(XD_fi(:,k)).*real(conj(XD_fi(:,l))),1,16,4)...
 %           -fi(imag(XD_fi(:,k)).*imag(conj(XD_fi(:,l))),1,16,4))...
 %          +(fi(imag(XD_fi(:,k)).*real(conj(XD_fi(:,l))) ,1,16,4)...
 %           +fi(real(XD_fi(:,k)).*imag(conj(XD_fi(:,l))),1,16,4))*1j;
     end
-end    
+end
+XM_r=real(XM_int); % /(2^20);
+XM_i=imag(XM_int); % /(2^20);
+XM_int = int32(single(XM_r) + single(XM_i)*1j);
 % figure;surf(log(abs(XM))); title('Post Multiplication');
 % figure;surf(real(XM_fi)); title('Down conversion real');
 % figure;surf(imag(XM_fi)); title('Down conversion image');
@@ -147,25 +154,28 @@ end
 %% Second FFT %%
 %%%%%%%%%%%%%%%%
 XF2=fft(XM);
-XM_fi=single(XM_fi);
-XF2_fi=fft(XM_fi);
+XF2_fi=fft(single(XM_fi));
+XF2_int=fft(single(XM_int));
 %XF2=fftshift(XF2);
 %XF2=[XF2(:,Np^2/2+1:Np^2) XF2(:,1:Np^2/2)];
-XF2=fftshift(XF2,1);
-XF2_fi=fftshift(XF2_fi,1);
-XF2_fi=fi(XF2_fi,1,16,2); % 14.2
+XF2=fftshift(XF2,1); % float
+XF2_fi=fi(fftshift(XF2_fi,1),1,16,2); % 14.2
+XF2_int=int32(fftshift(XF2_int,1)); % int32
 %figure;surf(log(abs(XF2))); title('FFT 2');
 
 % Here he is cutting out the high frequency and low frequency components, why?  
 XF2=XF2(P/4+1:3*P/4, :); % XF2=XF2(P/4:3*P/4, :); % Changed by Louis
 XF2_fi=XF2_fi(P/4+1:3*P/4, :);
+XF2_int=XF2_int(P/4+1:3*P/4, :);
 %Get the magnitude
 M=abs(XF2);
 M_fi=abs(XF2_fi);
+M_int=abs(single(XF2_int)); %
 alphao=-1:1/N:1;
 fo=-.5:1/Np:.5;
 Sx=zeros(Np+1,2*N+1);
 Sx_fi=fi(zeros(Np+1,2*N+1),1,16,2); % 14.2
+Sx_int=int32(zeros(Np+1,2*N+1)); % 
 % The size of M  is (P/2, Np^2)
 % The size of Sx is (Np+1, 2*N+1)
 
@@ -194,6 +204,7 @@ for k1=1:P/2 % k1=1:P/2+1 % Changed by Louis
             ll=1+N*(alpha+1);
             Sx(kk,ll)=M(k1,k2);
             Sx_fi(kk,ll)=M_fi(k1,k2);
+            Sx_int(kk,ll)=M_int(k1,k2);
         end
     end
 end
