@@ -53,7 +53,7 @@ def scd_fam(x, Np, L, N=None):
 
     # calculating conjugate products, second FFT and the final matrix
     # Sx = np.zeros((Np, 2 * N), dtype=complex)
-    Sx = np.zeros((2 * Np, 2 * N), dtype=complex)
+    Sx = np.zeros((2 * Np - 1, 2 * N), dtype=complex)
     Mp = N // Np
 
     for k in range(Np):
@@ -91,12 +91,12 @@ def plotscd_fam(x, Np, L, t):
 # compare with precomputed solution
 if __name__ == "__main__":
     def audiotest():
-        # (Np, L, x, y) = np.load('audiosample.npy', allow_pickle=True)
-        x = np.load('iq.npy', allow_pickle=True)
+        (Np, L, x, y) = np.load('audiosample.npy', allow_pickle=True)
+        # x = np.load('iq.npy', allow_pickle=True)
         N = 2048
-        Np = 256
-        L = 64
-        y = []
+        # Np = 256
+        # L = 64
+        # y = []
         print("x.shape={}, Np={}, L={}".format(x.shape, Np, L))
         # f = np.absolute(scd_fam(x, Np, L))
         f = np.absolute(scd_fam(x, Np, L, N))
