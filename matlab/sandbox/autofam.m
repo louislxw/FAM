@@ -1,4 +1,4 @@
-function [Sx,alphao,fo]=autofam(x,fs,df,dalpha)
+function [Sxx,alphao,fo]=autofam(x,fs,df,dalpha)
 %   AUTOFAM(X,FS,DF,DALPHA) computes the spectral auto-
 %   correlation density function estimate of the signals X
 %   by using the FFT Accumulation Method(FAM). Make sure that
@@ -15,8 +15,10 @@ function [Sx,alphao,fo]=autofam(x,fs,df,dalpha)
 %   ALPHAO  - cyclic frequency;
 %   FO      - spectrum frequency;
 %
-% e.g. x = (1:2240)'; fs = 1000; df = 5; dalpha = 0.5; % Add by Louis
-% or x = repmat(0:0.1:0.3, [1 560]); fs = 1000; df = 5; dalpha = 0.5; % Add by Louis
+% e.g. x = (1:2240)'; fs = 1000; df = 5; dalpha = 0.5; 
+% or x = repmat(0:0.1:0.3, [1 560]); fs = 1000; df = 5; dalpha = 0.5; 
+% or x = load('iq.mat'); x = x.mydata; fs = 1000; df = 5; dalpha = 0.5; 
+% or x = load('test.mat'); x = x.x; fs = 1000; df = 5; dalpha = 0.5;
 
 if nargin ~= 4
     error('Wrong number of arguments.');
@@ -136,41 +138,53 @@ XF2=fftshift(XF2,1);
 %figure;surf(log(abs(XF2))); title('FFT 2');
 
 % Here he is cutting out the high frequency and low frequency components, why?  
-XF2=XF2(P/4+1:3*P/4, :); % XF2=XF2(P/4:3*P/4, :); % Changed by Louis
+% XF2=XF2(P/4+1:3*P/4, :); % XF2=XF2(P/4:3*P/4, :); % Changed by Louis
 
 %Get the magnitude
 M=abs(XF2);
 alphao=-1:1/N:1;
 fo=-.5:1/Np:.5;
-Sx=zeros(Np+1,2*N+1);
+% Sx=zeros(Np+1,2*N+1);
+Sxx=zeros(2*Np-1, 2*N);
 
 % The size of M  is (P/2, Np^2)
 % The size of Sx is (Np+1, 2*N+1)
+% The size of Sxx is (2×Np-1, 2*N)
 
 %%%%%%%%%%%%%%%%%%%
 %% alpha profile %%
 %%%%%%%%%%%%%%%%%%%
-for k1=1:P/2 % k1=1:P/2+1 % Changed by Louis
-    for k2=1:Np^2
-        if rem(k2,Np)==0
-            l=Np/2-1;
-        else
-            l=rem(k2,Np)-Np/2-1;
-        end
-	      
-        k=ceil(k2/Np)-Np/2-1;
-        p=k1-P/4-1;
-        alpha=(k-l)/Np+(p-1)/L/P;
-        f=(k+l)/2/Np;
-        
-        if alpha<-1 || alpha>1
-            k2=k2+1;
-        elseif f<-.5 || f>.5
-            k2=k2+1;
-        else
-            kk=ceil(1+Np*(f+.5));
-            ll=1+N*(alpha+1);
-            Sx(kk,ll)=M(k1,k2);
-        end
+% for k1=1:P/2 % k1=1:P/2+1 % Changed by Louis
+%     for k2=1:Np^2
+%         if rem(k2,Np)==0
+%             l=Np/2-1;
+%         else
+%             l=rem(k2,Np)-Np/2-1;
+%         end
+% 	      
+%         k=ceil(k2/Np)-Np/2-1;
+%         p=k1-P/4-1;
+%         alpha=(k-l)/Np+(p-1)/L/P;
+%         f=(k+l)/2/Np;
+%         
+%         if alpha<-1 || alpha>1
+%             k2=k2+1;
+%         elseif f<-.5 || f>.5
+%             k2=k2+1;
+%         else
+%             kk=ceil(1+Np*(f+.5));
+%             ll=1+N*(alpha+1);
+%             Sx(kk,ll)=M(k1,k2);
+%         end
+%     end
+% end
+Mp = N / Np;
+for k = 1 : Np
+    for l = 1 : Np
+        row = k + l - 1;
+        col = (k-1) * Np + l;
+        a = int32(((k - l) / Np + 1.) * N);
+        Sxx(row, (a - Mp + 1):(a + Mp)) = M((P/2 - Mp + 1):(P/2 + Mp), col);
     end
 end
+
