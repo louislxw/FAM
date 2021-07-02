@@ -17,10 +17,10 @@ function [Sxx,alphao,fo]=autofam(x,fs,df,dalpha)
 %
 % e.g. x = (1:2240)'; fs = 1000; df = 5; dalpha = 0.5; 
 % or x = repmat(0:0.1:0.3, [1 560]); fs = 1000; df = 5; dalpha = 0.5; 
-% or x = load('iq.mat'); x = x.mydata; fs = 1000; df = 5; dalpha = 0.5; 
-% or x = load('iq.mat'); x = x.mydata(1:512); fs = 600; df = 40; dalpha = 5; 
-% or x = load('test.mat'); x = x.x; fs = 1000; df = 5; dalpha = 0.5;
-% or x = load('qam4.mat'); x = x.s; fs = 1000; df = 5; dalpha = 0.5;
+% or x = load('data/iq.mat'); x = x.mydata(1:512); fs = 600; df = 40; dalpha = 5; 
+% or x = load('data/test.mat'); x = x.x; fs = 1000; df = 5; dalpha = 0.5;
+% or x = load('data/qam4.mat'); x = x.s; fs = 1000; df = 5; dalpha = 0.5;
+% or x = load('data/part0.mat'); x = x.mydata; fs = 1000; df = 5; dalpha = 0.5; 
 
 if nargin ~= 4
     error('Wrong number of arguments.');
@@ -88,8 +88,9 @@ XF1=fft(XW);
 %XF1=fftshift(XF1);
 %XF1=[XF1(:,P/2+1:P) XF1(:,1:P/2)];
 XF1=fftshift(XF1, 1);
-a_oo = (XF1 - min(min(real(XF1))) - 1i * min(min(imag(XF1))));
-XF1 = a_oo ./ max(max(abs(a_oo)));
+% a_oo = (XF1 - min(min(real(XF1))) - 1i * min(min(imag(XF1))));
+% XF1 = a_oo ./ max(max(abs(a_oo)));
+XF1 = XF1 ./ max(max(abs(XF1)));
 %surf(log(abs(XF1)));
 %title('FFT of data');
 
